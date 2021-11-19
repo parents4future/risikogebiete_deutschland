@@ -3,48 +3,19 @@
 var map;
 var polygonSeries;
 var polygonTemplate;
-//window.addEventListener("load", setup_amChartmap);
 
+// Global data instances
+var geo_json;
+var data_json;
+var age_groups = ["A00-A04","A05-A14","A15-A34","A35-A59","A60-A79","A80+"];
+
+// Where to find the data and scripts
 var scripts = document.getElementsByTagName('script');
 var path = scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
 var mydir = path.split('/').slice(0, -1).join('/')+'/';  // remove last filename part of path
 
-
-function setup_amChartmap(){
-
-	// Create map object
-	map = am4core.create("chartdiv", am4maps.MapChart);
-
-	//Performance
-	map.svgContainer.autoResize = false;
-	map.svgContainer.measure();
-	am4core.options.onlyShowOnViewport = true;
-	am4core.options.deferredDelay = 500;
-	am4core.options.queue = true;
-	map.maxZoomLevel = 1;
-	map.zoomDuration = 0;
-
-	map.geodataSource.url =  mydir+"../data/minified_landkreise.geo.json";
-
-	map.projection = new am4maps.projections.Miller();
-
-	polygonSeries = new am4maps.MapPolygonSeries();
-	polygonSeries.useGeodata = true;
-	polygonSeries.calculateVisualCenter = true;
-	map.series.push(polygonSeries);
-
-
-	var polygonTemplate = polygonSeries.mapPolygons.template;
-	polygonTemplate.applyOnClones = true;
-	polygonTemplate.tooltipText = "{AGS}";
-	polygonTemplate.fill = am4core.color("#74B266");
-
-	// Create hover state and set alternative fill color
-	var hs = polygonTemplate.states.create("hover");
-	hs.properties.fill = am4core.color("#367B25");
-
-}
-
+//Main function call
+window.addEventListener("load", setup_highchartsmap);
 
 /**
  * Find a short tooltip label for local authority classes in germany.
@@ -68,12 +39,34 @@ function localAuthorityToolTip(pointProperties) {
     return prefix + pointProperties.GEN;
 }
 
+// Config for the colors of the map (default are colorblind friendly)
+var default_dataClasses  = {dataClasses: [{
+		to: 25
+	}, {
+		from: 25,
+		to: 50
+	}, {
+		from: 50,
+		to: 100
+	}, {
+		from: 100,
+		to: 200
+	}, {
+		from: 200,
+		to: 500
+	}, {
+		from: 500,
+		to: 1000
+	}, {
+		from: 1000,
+		to: 2000
+	}, {
+		from: 2000
+	}]
+};
+var default_colors = {colors: ['#15b01a', '#f0f921', '#fdb42f', '#ed7953', '#cb4679', '#9c179e', '#5c01a6', "#0d0887"]};
+var old_colors = {colors: ["#15b01a","#fac205","#f97c0e","#c50000","#8c53d1","#4d00fe","#00009c","#303030"]};
 
-window.addEventListener("load", setup_highchartsmap);
-
-var geo_json;
-var data_json;
-var age_groups = ["A00-A04","A05-A14","A15-A34","A35-A59","A60-A79","A80+"]
 function setup_highchartsmap(){
 
 	//Raw geojson
@@ -88,7 +81,7 @@ function setup_highchartsmap(){
 
 	//DATA prep
 	var request = new XMLHttpRequest();
-	request.open("GET", mydir+"../data/data_latest.json", false);
+	request.open("GET", mydir+"../data/data_latest.json?nocache="+Date.now(), false);
 	request.send(null)
 	data_json = JSON.parse(request.responseText);
 
@@ -121,7 +114,6 @@ function setup_highchartsmap(){
 		data.push(dat)
 	}
 
-
 	//Create series dict
 	var input_series = [{
    		//Config
@@ -148,7 +140,7 @@ function setup_highchartsmap(){
 		input_series.push({
    		//Config
    		name: a,
-      colorKey: "inzidenz_"+a,
+      	colorKey: "inzidenz_"+a,
    		//Data
    		data: data,
    		keys: ["id",
@@ -172,6 +164,7 @@ function setup_highchartsmap(){
 	map = new Highcharts.Map('chartdiv', {  
    	//First add geojson data
    	chart:{
+   		styleMode: true,
    		map:geo_json,
    		allAreas: true,
    	    resetZoomButton: {
@@ -234,14 +227,14 @@ function setup_highchartsmap(){
     		str +=`<tr>
     						<td>Alle</td>
     						<td style="text-align: right;">${wc}</td>
-    						<td style="text-align: right;">${i.toFixed(2)}</td>
+    						<td style="text-align: right;">${i.toFixed(2).replace(".", ",")}</td>
     					</tr>`
     		for (a of age_groups) {
     			console.log(i_a[a],name,this.point.properties.id)
 	    		str +=`<tr>
 	    						<td>${a}</td>
 	    						<td style="text-align: right;">${wc_a[a]}</td>
-	    						<td style="text-align: right;">${i_a[a].toFixed(2)}</td>
+	    						<td style="text-align: right;">${i_a[a].toFixed(2).replace(".", ",")}</td>
 	    					</tr>`    			
     		}
 
@@ -252,26 +245,10 @@ function setup_highchartsmap(){
       pointFormat: '{point.properties.GEN}: {point.properties.id}'
     },
 
-    colors:["#15b01a","#fac205","#f97c0e","#c50000","#8c53d1","#303030"],
+    colors: default_colors["colors"],
     colorAxis: {
         dataClassColor: 'category',
-        dataClasses: [{
-            to: 25
-        }, {
-            from: 25,
-            to: 50
-        }, {
-            from: 50,
-            to: 100
-        }, {
-            from: 100,
-            to: 200
-        }, {
-            from: 200,
-            to: 500
-        }, {
-            from: 500,
-        }],
+        dataClasses: default_dataClasses["dataClasses"],
         events:{
         	legendItemClick: function(e){e.preventDefault();console.log(e)},
         }
@@ -279,26 +256,37 @@ function setup_highchartsmap(){
 
 	legend: {
 		title: {
-		  text: 'Fälle/100.000 EW<br/> <span style="font-size: 9px; color: #666; font-weight: normal">in der jeweiligen Altersgruppe</span>'
+		  text: '<label class="legend_title">Fälle/100.000 EW</label><br/> <span class="legend_subtitle">in der jeweiligen Altersgruppe</span>'
 		},
 		align: 'left',
 		verticalAlign: 'bottom',
 		floating: true,
-    labelFormatter: function () {
-      return (this.from || '<') + ' - ' + (this.to || '>');
-    },
+		labelFormatter: function () {
+			return (this.from || '<') + ' - ' + (this.to || '>');
+		},
 		layout: 'vertical',
 		valueDecimals: 0,
 		backgroundColor: 'rgba(0,0,0,0.1)',
 		symbolRadius: 0,
 		symbolHeight: 14,
 		borderRadius: 5,
+		itemStyle:{
+			color: colorFont()
+		}
 	},
 
 	});
 }
 
 
+function colorFont(){
+	if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+		return "gray"
+	}
+	else{
+		return "#333333"
+	}
+}
 
 var inputs;
 window.addEventListener("load", setup_inputs);
@@ -316,8 +304,26 @@ function setup_inputs(){
 				}
 			}
 		}
+		if (input.checked){
+			input.click();
+		}
 	}
-  date()
+
+	input_change_color = document.getElementById("change_color");
+	input_change_color.onclick = function(e){
+		if (input_change_color.checked){
+			change_color(old_colors,default_dataClasses)
+		}
+		else{
+			change_color(default_colors,default_dataClasses)
+		}
+	}
+	// Check for initial input state
+	if (input_change_color.checked){
+		change_color(old_colors,default_dataClasses)
+	}
+
+ 	date()
 }
 
 
@@ -383,3 +389,22 @@ const date = async () => {
   document.getElementById("lastcommitdate").innerHTML = lastcommitdate
 }
 
+
+
+// Change color of highcharts map dynamically
+// Expects dicts:
+// { color: ["#ffffff", "#ffffff"]}
+/* { dataClasses: [{
+            to: 25
+        }, {
+            from: 25,
+            to: 50
+        }]}
+*/
+function change_color(colours,dataClasses){
+	map.update(colours,false);
+	for (i=0;i<map.series.length;i++){
+		map.series[i].colorAxis.update(dataClasses,false);
+	}
+	map.redraw();
+}
