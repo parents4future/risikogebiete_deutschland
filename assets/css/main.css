@@ -4,10 +4,10 @@
 * @Last Modified by:   Sebastian Mohr
 * @Last Modified time: 2021-11-05 20:55:27
 */
-
-body {
+html, body {
 	font-family: "Lucida Grande", "Lucida Sans Unicode", Arial, Helvetica, sans-serif;
 	font-size: 12px;
+    overflow: hidden;
 }
 
 
@@ -19,6 +19,7 @@ h5{
 	margin-bottom: 3px;
 	margin-top: 3px;
 	padding:0;
+    color: #7762b5;
 }
 
 input {
@@ -38,6 +39,23 @@ input {
 	border-radius: 5px;
 }
 
+.color-box {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    background-color: #ccc;
+}
+
+#legend{
+	position: fixed;
+	display: grid;
+	bottom: 10px;
+	left: 10px;
+	padding: 5px;
+	background-color: rgba(0,0,0,0.1);
+	border-radius: 5px;
+}
+
 table {
  border-collapse: collapse;
 }
@@ -46,6 +64,23 @@ td:first-child, th:first-child {
 }
 tr:last-child {
  border-bottom: none;
+}
+
+.data_tooltip {
+    color: #212529;
+    position: absolute;
+    background-color: white;
+    border: solid;
+    border-width: 1px;
+    border-radius: 5px;
+    padding: 10px;
+    pointer-events: none;
+    background-color: rgba(200,200,200,0.8);
+    font-size: 10px;
+}
+
+.data_tooltip h5{
+    color: #212529;
 }
 
 /*--------------------------------------------------------------
@@ -159,3 +194,20 @@ ul > li
 
 }
 
+.grid-container {
+  display: grid;
+  grid-template-columns: min-content min-content;
+  grid-gap: 0px 10px;
+  padding: 10px;
+}
+#color-bar-texts{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    padding: 1.5px;
+}
+#color-bar-texts div{
+    text-align: right;
+    white-space:nowrap;
+}
